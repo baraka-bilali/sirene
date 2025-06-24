@@ -8,8 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #f8fafc;
@@ -49,7 +47,6 @@
             background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
         }
     </style>
-    @livewireStyles
 </head>
 
 <body class="min-h-screen">
@@ -105,8 +102,6 @@
                                 <i class="fas fa-fire text-red-500 text-xl"></i>
                             </div>
                         </div>
-
-
                     </div>
 
                     <!-- Alerts Table -->
@@ -114,27 +109,25 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col"
+                                    <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <i class="fas fa-tag mr-1"></i> Type
                                     </th>
-                                    <th scope="col"
+                                    <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <i class="fas fa-comment-alt mr-1"></i> Message
                                     </th>
-
-                                    <th scope="col"
+                                    <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <i class="fas fa-clock mr-1"></i> Heure
                                     </th>
-                                    <th scope="col"
+                                    <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <i class="fas fa-cog mr-1"></i> Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody id="alerts-body" class="bg-white divide-y divide-gray-200">
-                                <!-- Sample alerts - would be replaced with dynamic data -->
                                 @foreach ($alerts as $alert)
                                     <tr class="alert-critical bg-red-50 hover:bg-red-100 transition">
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -147,7 +140,6 @@
                                             <div class="text-sm font-medium text-gray-900">{{ $alert->message }}</div>
                                             <div class="text-sm text-gray-500">Bâtiment A, étage 3</div>
                                         </td>
-
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <i class="far fa-clock mr-1"></i> {{ $alert->alert_time }}
                                         </td>
@@ -162,7 +154,6 @@
                                         </td>
                                     </tr>
                                 @endforeach
-
                             </tbody>
                         </table>
                     </div>
@@ -206,46 +197,20 @@
         </footer>
     </div>
 
+    <audio id="notifSound" src="{{ asset('sonne.mp3') }}" preload="auto"></audio>
     <script>
-        async function fetchAlertCount() {
-            try {
-                const response = await fetch("http://127.0.0.1:8000/api/alert-count");
-                const data = await response.json();
-                document.getElementById('critical-count').textContent = data.count;
-            } catch (error) {
-                console.error("Erreur lors du chargement du compteur d'alertes :", error);
-            }
-        }
-
-        // Rafraîchir toutes les 5 secondes
-        setInterval(fetchAlertCount, 5000);
-        fetchAlertCount(); // au chargement initial
-        async function deleteAlert(id) {
-            if (!confirm("Voulez-vous vraiment supprimer cette alerte ?")) return;
-
-            try {
-                const response = await fetch(`http://127.0.0.1:8000/api/alert/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    alert("Alerte supprimée !");
-                    location.reload(); // recharge la page pour voir la mise à jour
-                } else {
-                    const error = await response.json();
-                    alert("Erreur : " + error.message);
-                }
-            } catch (error) {
-                alert("Erreur de connexion au serveur.");
-                console.error(error);
-            }
-        }
+        window.addEventListener('load', () => {
+            const context = new AudioContext();
+            const oscillator = context.createOscillator();
+            oscillator.connect(context.destination);
+            oscillator.start(0);
+            oscillator.stop(0.01);
+        });
+    </script>
+    <script>
         async function fetchAlertCounts() {
             try {
-                const response = await fetch("http://127.0.0.1:8000/api/alert");
+                const response = await fetch("/api/alerts");
                 const data = await response.json();
 
                 let critical = 0,
@@ -255,24 +220,14 @@
 
                 data.forEach(alert => {
                     const valeur = alert.valeur;
-
-                    if (valeur >= 150) {
-                        critical++;
-                    } else if (valeur >= 120) {
-                        high++;
-                    } else if (valeur >= 90) {
-                        medium++;
-                    } else {
-                        low++;
-                    }
+                    if (valeur >= 150) critical++;
+                    else if (valeur >= 120) high++;
+                    else if (valeur >= 90) medium++;
+                    else low++;
                 });
 
                 const total = critical + high + medium + low;
-
                 document.getElementById('critical-count').textContent = critical;
-                document.getElementById('high-count').textContent = high;
-                document.getElementById('medium-count').textContent = medium;
-                document.getElementById('low-count').textContent = low;
                 document.getElementById('alert-count').textContent = total;
 
             } catch (error) {
@@ -280,11 +235,68 @@
             }
         }
 
-        // Rafraîchir toutes les 5 secondes
         setInterval(fetchAlertCounts, 5000);
-        fetchAlertCounts(); // au chargement initial
+        fetchAlertCounts();
+
+        async function deleteAlert(id) {
+            if (!confirm("Voulez-vous vraiment supprimer cette alerte ?")) return;
+
+            try {
+                const response = await fetch(`/api/alerts/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    alert("Alerte supprimée !");
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert("Erreur : " + error.message);
+                }
+            } catch (error) {
+                alert("Erreur de connexion au serveur.");
+                console.error(error);
+            }
+        }
     </script>
-    @livewireScripts
+
+    <!-- Script Pusher -->
+    <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+    <script>
+        Pusher.logToConsole = true;
+
+        const pusher = new Pusher('f6fe45ce10b1c74ea6f7', {
+            cluster: 'ap1'
+        });
+
+        const channel = pusher.subscribe('my-channel');
+        channel.bind('my-event', function(data) {
+            console.log("Nouvelle alerte :", data);
+
+            const sound = document.getElementById('notifSound');
+            if (sound) {
+                sound.play().catch((e) => console.warn("Le son ne peut pas être joué automatiquement :", e));
+            }
+
+            // Optionnel : ajoute une alerte dans la table ici dynamiquement
+        });
+
+        document.addEventListener('click', () => {
+            const sound = document.getElementById('notifSound');
+            if (sound) sound.play().catch(() => {});
+        }, {
+            once: true
+        });
+    </script>
+
+    <!-- Bouton de test audio -->
+    <button onclick="document.getElementById('notifSound').play()"
+        class="fixed bottom-4 right-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow">
+        🔊 Tester le son
+    </button>
 
 </body>
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Notification;
+use App\Events\MyEvent;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -26,7 +27,10 @@ class NotificationController extends Controller
             'alert_time' => now(),
         ]);
 
-        return response()->json(['status' => 'OK', 'data' => $notification]);
+        // Émet l’événement Pusher
+        event(new MyEvent($notification->message));
+
+        return response()->json(['status' => 'Notification envoyée']);
     }
 
     public function index()
