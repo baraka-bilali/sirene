@@ -197,7 +197,7 @@
         </footer>
     </div>
 
-    <audio id="notifSound" src="{{ asset('sonne.mp3') }}" preload="auto"></audio>
+    <audio id="notifSound" src="https://sirene.tiptechenergie.com/sonne.mp3" preload="auto"></audio>
     <script>
         window.addEventListener('load', () => {
             const context = new AudioContext();
@@ -210,7 +210,7 @@
     <script>
         async function fetchAlertCounts() {
             try {
-                const response = await fetch("/api/alerts");
+                const response = await fetch("https://sirene.tiptechenergie.com/api/alerts");
                 const data = await response.json();
 
                 let critical = 0,
@@ -242,7 +242,7 @@
             if (!confirm("Voulez-vous vraiment supprimer cette alerte ?")) return;
 
             try {
-                const response = await fetch(`/api/alerts/${id}`, {
+                const response = await fetch(`https://sirene.tiptechenergie.com/api/alerts/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'Accept': 'application/json'
